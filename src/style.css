@@ -104,3 +104,24 @@ button svg { width: 19px; height: 19px; flex: 0 0 auto; stroke-width: 1.8; }
 .commune-picker { display: block; margin-top: 10px; width: 100%; }
 .commune-picker select { width: 100%; min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 13px; background: var(--surface); color: var(--muted); box-shadow: 0 2px 5px #18304715; }
 .commune-picker select:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+.overlay-row { flex-wrap: wrap; }
+.overlay-panel { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); font-size: 12px; line-height: 1.5; }
+.overlay-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.overlay-heading button { border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; background: transparent; color: var(--blue); font-size: 12px; }
+.overlay-panel p { margin: 6px 0; }
+.overlay-panel p:empty { display: none; }
+.overlay-panel a, .urbanism-note a { color: var(--blue); }
+.overlay-panel summary { cursor: pointer; color: var(--muted); }
+.zone-legend { display: flex; gap: 6px 12px; flex-wrap: wrap; margin-top: 9px; }
+.zone-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 5px; background: var(--zone); border-radius: 2px; }
+.centre-link { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); padding: 7px 0; background: transparent; color: var(--blue); font-size: 12px; }
+.urbanism-note { font-size: 12px; line-height: 1.5; color: var(--muted); margin: 11px 0 0; }
+a.focus-again { text-decoration: none; }
+.left-tools { max-height: calc(100dvh - 105px); overflow-y: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.help { max-height: 75vh; overflow-y: auto; }
+@media (max-width: 680px) {
+ .overlay-panel { width: min(320px, calc(100vw - 78px)); }
+ .overlay-panel details[open] { max-height: 24vh; overflow-y: auto; }
+ .left-tools { max-height: calc(100dvh - 120px); }
+}

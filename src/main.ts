@@ -6,6 +6,7 @@ import type { Feature, FeatureCollection, MultiPolygon, Polygon } from 'geojson'
 import { createElement, Search, X, Grid2X2, MapPin, Route, Plus, Minus, Navigation2, Maximize, Info, Crosshair, Check, Images, Trees, type IconNode } from 'lucide';
 import { SearchClient } from './search-client';
 import { kindNames, type SearchItem, type SearchKind } from './search';
+import { createOverlays } from './overlays';
 import './style.css';
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -46,6 +47,20 @@ el('app').innerHTML = `
       <button id="details" class="pill" aria-pressed="true" title="Arbres et bâtiments détaillés à proximité" disabled>${icon(Trees)}Détails</button>
     </div>
     <label class="commune-picker"><span class="sr-only">Aller à une commune</span><select id="commune-picker" aria-label="Aller à une commune"><option value="">Toute la région</option></select></label>
+    <div class="layer-row overlay-row">
+      <button id="urbanism" class="pill" aria-pressed="false" disabled>Urbanisme</button>
+      <button id="centres" class="pill" aria-pressed="false" disabled>Centres proposés</button>
+    </div>
+    <section id="urbanism-panel" class="overlay-panel" aria-label="Zonage d’urbanisme" hidden>
+      <div class="overlay-heading"><strong>Zonage DDT 09</strong><button id="urbanism-refresh">Actualiser</button></div>
+      <p id="urbanism-status" role="status"></p><p id="urbanism-coverage"></p>
+      <details><summary>Légende et source</summary><div class="zone-legend"><span style="--zone:#ce608c">U</span><span style="--zone:#ed9d39">AU</span><span style="--zone:#d1bd3e">A</span><span style="--zone:#438b72">N</span><span style="--zone:#8480c5">Carte communale</span><span style="--zone:#758896">Autre</span></div>
+      <p>Couleurs par famille de codes. Cliquez sur une zone pour son code exact, sa date et son règlement. Les données suivent les publications de la DDT.</p>
+      <a href="https://carto2.geo-ide.din.developpement-durable.gouv.fr/frontoffice/?map=d8de8132-4e9f-4a0a-b3d5-cf9d980c321c" target="_blank" rel="noopener noreferrer">Consulter la carte officielle ↗</a></details>
+    </section>
+    <section id="centres-panel" class="overlay-panel" aria-label="Périmètres proposés des bourgs" hidden>
+      <details open><summary>Centres proposés pour le rendu 3D</summary><p>Enveloppes bâties IGN ; à Boussenac, noyau d’Espiés autour de la mairie. Ces périmètres servent au rendu des bâtiments et ne constituent pas un zonage réglementaire.</p><div id="centres-list"></div></details>
+    </section>
     <section id="selection" class="selection-card" aria-label="Lieu sélectionné" hidden></section>
   </div>
   <div class="place-title"><h1>Massat</h1><p id="region-summary">Commune de Massat, en relief</p></div>
@@ -63,6 +78,7 @@ el('app').innerHTML = `
     <p>Recherchez par exemple <b>F 1444</b>, <b>Liers</b> ou <b>Rue de la Mairie</b>. Un numéro seul affiche les parcelles des différentes sections.</p>
     <p>Activez <b>Parcelles</b> pour voir le cadastre et sélectionner un terrain par clic. <b>2D</b> remet la vue à la verticale ; <b>3D</b> l’incline.</p>
     <p><b>Détails</b> ajoute les arbres et les bâtiments détaillés quand vous zoomez. Désactivez-le pour une vue plus légère ou pour lire les parcelles sous les arbres.</p>
+    <p><b>Urbanisme</b> récupère les zones et règlements de la DDT à la demande. <b>Centres proposés</b> montre les périmètres retenus pour le rendu : deux niveaux hors centre, trois rangées de fenêtres au maximum dans les centres, églises et chapelles exceptées. Les hauteurs IGN restent conservées dans les données.</p>
     <small id="data-summary">Sources IGN : limites ADMIN EXPRESS 2026, BD TOPO, CoSIA 2025, relief LiDAR HD et photographies aériennes. Cadastre DGFiP / Etalab. Les arbres, toits et fenêtres sont symboliques ; leurs contours et emprises suivent les données géographiques.</small>
   </section>
   <div id="loading" class="loading" role="status">Chargement de Massat…</div>
@@ -137,7 +153,7 @@ async function start() {
       { id: 'boundary', type: 'line', source: 'boundary', paint: { 'line-color': '#586b68', 'line-width': 1.5, 'line-dasharray': [4, 2] } },
       { id: 'building-footprints', type: 'fill', source: 'regional', 'source-layer': 'buildings', minzoom: 13, paint: { 'fill-color': '#af9180' } },
       { id: 'buildings', type: 'fill-extrusion', source: 'regional', 'source-layer': 'buildings', minzoom: 13, paint: {
-        'fill-extrusion-color': '#d5bdab', 'fill-extrusion-height': ['get', 'height'], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true,
+        'fill-extrusion-color': '#d5bdab', 'fill-extrusion-height': ['coalesce', ['get', 'displayHeight'], ['get', 'height']], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true,
       } },
       { id: 'selected-fill', type: 'fill', source: 'selection', filter: ['==', '$type', 'Polygon'], paint: { 'fill-color': '#3788ef', 'fill-opacity': .22 } },
       { id: 'selected-halo', type: 'line', source: 'selection', paint: { 'line-color': '#f6f9fd', 'line-width': 7, 'line-opacity': .85 } },
@@ -168,6 +184,7 @@ async function start() {
   }
   updateScopeLabels();
   fitCommune(false);
+  const overlays = createOverlays(map, meta.communes, () => scope, clearSelection);
   let ready = false;
   let hadError = false;
   map.on('error', event => {
@@ -176,6 +193,7 @@ async function start() {
   });
   map.on('style.load', () => {
     ready = true;
+    overlays.restore();
     for (const id of ['search', 'parcels', 'satellite', 'details']) (el(id) as HTMLButtonElement).disabled = false;
     if (parcelsVisible) { void ensureParcels(); for (const id of ['parcel-fill','parcel-lines','parcel-labels']) map.setLayoutProperty(id,'visibility','visible'); }
     map.setLayoutProperty('ortho','visibility',satellite ? 'visible' : 'none');
@@ -343,8 +361,9 @@ async function start() {
     try {
       await searchClient.load(code, meta.communes.map(c=>c.insee), scopeRequest.signal);
       if (version !== scopeVersion) return;
+      overlays.invalidate();
       ready = false;
-      for (const id of ['parcels','satellite','details']) el<HTMLButtonElement>(id).disabled = true;
+      for (const id of ['parcels','satellite','details','urbanism','centres']) el<HTMLButtonElement>(id).disabled = true;
       clearSelection(); input.value = ''; el('clear-search').hidden = true;
       if (detailLayer) { map.removeLayer(detailLayer.id); detailLayer = undefined; }
       scope = code;
@@ -359,6 +378,7 @@ async function start() {
   }
   el<HTMLSelectElement>('commune-picker').onchange = event => { void changeScope((event.target as HTMLSelectElement).value); };
   function clearSelection() {
+    overlays.clearHighlight();
     selected = undefined; selectionVersion++;
     (map.getSource('selection') as GeoJSONSource | undefined)?.setData(empty);
     (map.getSource('selected-point') as GeoJSONSource | undefined)?.setData(empty);
@@ -367,6 +387,7 @@ async function start() {
   async function select(item: SearchItem) {
     if (!ready) return;
     if (item.kind === 'commune') { await changeScope(item.commune); return; }
+    overlays.clearHighlight();
     const version = ++selectionVersion;
     selected = item; input.value = item.label; el('clear-search').hidden = false;
     closeSearch(); input.blur(); el('help').hidden = true; el('help-toggle').setAttribute('aria-expanded', 'false');
@@ -393,13 +414,14 @@ async function start() {
   map.on('click', event => {
     if (!ready) return;
     closeSearch();
+    if (overlays.handleClick(event.point)) return;
     const layers = ['place-labels', 'place-dots', ...(parcelsVisible ? ['parcel-fill'] : [])];
     const feature = map.queryRenderedFeatures(event.point, { layers }).find(feature => typeof feature.properties?.id === 'string');
     if (feature) { const version = scopeVersion; void searchClient.get(String(feature.properties.id)).then(item => { if(item && ready && version === scopeVersion) void select(item); }).catch(() => toast('Cette sélection n’a pas pu être chargée.')); }
   });
   map.on('mousemove', event => {
     if (!ready) return;
-    map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ['place-labels', 'place-dots', ...(parcelsVisible ? ['parcel-fill'] : [])] }).length ? 'pointer' : '';
+    map.getCanvas().style.cursor = overlays.hit(event.point) || map.queryRenderedFeatures(event.point, { layers: ['place-labels', 'place-dots', ...(parcelsVisible ? ['parcel-fill'] : [])] }).length ? 'pointer' : '';
   });
 }
 
