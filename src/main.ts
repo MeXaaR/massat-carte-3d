@@ -49,17 +49,13 @@ el('app').innerHTML = `
     <label class="commune-picker"><span class="sr-only">Aller à une commune</span><select id="commune-picker" aria-label="Aller à une commune"><option value="">Toute la région</option></select></label>
     <div class="layer-row overlay-row">
       <button id="urbanism" class="pill" aria-pressed="false" disabled>Urbanisme</button>
-      <button id="centres" class="pill" aria-pressed="false" disabled>Centres proposés</button>
     </div>
     <section id="urbanism-panel" class="overlay-panel" aria-label="Zonage d’urbanisme" hidden>
-      <div class="overlay-heading"><strong>Zonage DDT 09</strong><button id="urbanism-refresh">Actualiser</button></div>
+      <div class="overlay-heading"><strong>Zonage DDT 09</strong></div>
       <p id="urbanism-status" role="status"></p><p id="urbanism-coverage"></p>
       <details><summary>Légende et source</summary><div class="zone-legend"><span style="--zone:#ce608c">U</span><span style="--zone:#ed9d39">AU</span><span style="--zone:#d1bd3e">A</span><span style="--zone:#438b72">N</span><span style="--zone:#8480c5">Carte communale</span><span style="--zone:#758896">Autre</span></div>
       <p>Couleurs par famille de codes. Cliquez sur une zone pour son code exact, sa date et son règlement. Les données suivent les publications de la DDT.</p>
       <a href="https://carto2.geo-ide.din.developpement-durable.gouv.fr/frontoffice/?map=d8de8132-4e9f-4a0a-b3d5-cf9d980c321c" target="_blank" rel="noopener noreferrer">Consulter la carte officielle ↗</a></details>
-    </section>
-    <section id="centres-panel" class="overlay-panel" aria-label="Périmètres proposés des bourgs" hidden>
-      <details open><summary>Centres proposés pour le rendu 3D</summary><p>Enveloppes bâties IGN ; à Boussenac, noyau d’Espiés autour de la mairie. Ces périmètres servent au rendu des bâtiments et ne constituent pas un zonage réglementaire.</p><div id="centres-list"></div></details>
     </section>
     <section id="selection" class="selection-card" aria-label="Lieu sélectionné" hidden></section>
   </div>
@@ -78,7 +74,7 @@ el('app').innerHTML = `
     <p>Recherchez par exemple <b>F 1444</b>, <b>Liers</b> ou <b>Rue de la Mairie</b>. Un numéro seul affiche les parcelles des différentes sections.</p>
     <p>Activez <b>Parcelles</b> pour voir le cadastre et sélectionner un terrain par clic. <b>2D</b> remet la vue à la verticale ; <b>3D</b> l’incline.</p>
     <p><b>Détails</b> ajoute les arbres et les bâtiments détaillés quand vous zoomez. Désactivez-le pour une vue plus légère ou pour lire les parcelles sous les arbres.</p>
-    <p><b>Urbanisme</b> récupère les zones et règlements de la DDT à la demande. <b>Centres proposés</b> montre les périmètres retenus pour le rendu : deux niveaux hors centre, trois rangées de fenêtres au maximum dans les centres, églises et chapelles exceptées. Les hauteurs IGN restent conservées dans les données.</p>
+    <p><b>Urbanisme</b> affiche les zones de la DDT et donne accès aux règlements au clic. Les données sont récupérées automatiquement au chargement de la carte et lors des changements de commune.</p>
     <small id="data-summary">Sources IGN : limites ADMIN EXPRESS 2026, BD TOPO, CoSIA 2025, relief LiDAR HD et photographies aériennes. Cadastre DGFiP / Etalab. Les arbres, toits et fenêtres sont symboliques ; leurs contours et emprises suivent les données géographiques.</small>
   </section>
   <div id="loading" class="loading" role="status">Chargement de Massat…</div>
@@ -363,7 +359,7 @@ async function start() {
       if (version !== scopeVersion) return;
       overlays.invalidate();
       ready = false;
-      for (const id of ['parcels','satellite','details','urbanism','centres']) el<HTMLButtonElement>(id).disabled = true;
+      for (const id of ['parcels','satellite','details','urbanism']) el<HTMLButtonElement>(id).disabled = true;
       clearSelection(); input.value = ''; el('clear-search').hidden = true;
       if (detailLayer) { map.removeLayer(detailLayer.id); detailLayer = undefined; }
       scope = code;

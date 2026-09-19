@@ -8,9 +8,9 @@ Carte publique de Massat et de ses six communes voisines : Biert, Boussenac, Erc
 
 Massat seule s’affiche au démarrage. Choisir une autre commune ou « Toute la région » dans le menu. Rechercher une parcelle, un hameau ou une rue ; la sélection recentre la carte. Le bouton « Parcelles » affiche le cadastre, « Satellite » les photographies IGN et « Détails » les arbres et bâtiments proches.
 
-« Urbanisme » charge le zonage PLU/PLUi et les secteurs de cartes communales depuis l’API officielle de la DDT de l’Ariège. Les codes s’affichent sur la carte ; cliquer sur une zone donne sa date et le lien vers son règlement officiel. « Actualiser » relance les appels à la source. Aucun zonage n’est figé dans ce dépôt.
+« Urbanisme » charge le zonage PLU/PLUi et les secteurs de cartes communales depuis l’API officielle de la DDT de l’Ariège. Les codes s’affichent sur la carte ; cliquer sur une zone donne sa date et le lien vers son règlement officiel. Les données sont récupérées automatiquement au chargement de la carte et lors des changements de commune. Aucun zonage n’est figé dans ce dépôt.
 
-« Centres proposés » montre les périmètres utilisés pour le rendu des bâtiments : enveloppes de zones habitées IGN portant le nom du village, sauf Boussenac où le noyau d’Espiés autour de la mairie est proposé. Ces contours ne constituent pas un zonage réglementaire.
+Les périmètres internes utilisés pour le rendu des bâtiments sont les enveloppes de zones habitées IGN portant le nom du village, sauf Boussenac où le noyau d’Espiés autour de la mairie est proposé. Ces contours ne constituent pas un zonage réglementaire.
 
 Glisser pour déplacer la carte, utiliser la molette pour zoomer, clic droit glissé ou Ctrl + clic pour tourner et incliner. Navigation tactile à deux doigts et boutons de cadrage, nord et 2D/3D disponibles.
 
@@ -28,7 +28,7 @@ Le relief n’est pas exagéré. Les exports de terrain et de photographie ont u
 
 Source : [carte officielle DDT 09](https://carto2.geo-ide.din.developpement-durable.gouv.fr/frontoffice/?map=d8de8132-4e9f-4a0a-b3d5-cf9d980c321c). Le client découvre les services WFS à partir de la configuration publique de cette carte, puis interroge les deux couches par code INSEE. Les géométries, codes, dates et liens vers les règlements sont lus à chaque récupération. Le champ DATAPPRO est présenté comme date du document, sans le confondre avec la date de récupération.
 
-Les appels commencent uniquement à l’activation de la couche. Un cache en mémoire de cinq minutes limite les appels lors des changements de commune ; « Actualiser » le contourne. La couche active se rafraîchit après quinze minutes lorsque l’onglet est visible. Les requêtes annulées ou anciennes ne peuvent pas remplacer le territoire courant. Un échec du service est distingué d’une réponse sans zones et n’empêche pas l’usage du fond de carte.
+Les appels commencent au chargement de la carte, puis lors de chaque changement de commune. Le bouton Urbanisme affiche ou masque les données déjà récupérées. La couche active se rafraîchit après quinze minutes lorsque l’onglet est visible. Les requêtes annulées ou anciennes ne peuvent pas remplacer le territoire courant. Un échec du service est distingué d’une réponse sans zones et n’empêche pas l’usage du fond de carte. Lorsque la couche est affichée, un nouvel essai automatique est effectué après une erreur.
 
 L’API autorise les appels directs depuis GitHub Pages ; aucun proxy ni secret n’est requis. La fraîcheur dépend des publications de la DDT. Les autres prescriptions et servitudes restent à consulter sur la carte officielle. L’absence de résultat pour une commune signifie seulement que ce service n’y renvoie pas de zonage.
 
